@@ -105,6 +105,129 @@
   margin: 0 4px;
 }
 
+/* Popover for tooth selection */
+.sim-tooth-selector-wrapper {
+  position: relative;
+}
+
+.sim-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 100;
+  width: 380px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  animation: sim-popover-in 0.2s ease-out;
+}
+
+@keyframes sim-popover-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.sim-popover-header {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.sim-arch-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 16px;
+}
+
+.sim-popover-divider {
+  width: 1px;
+  height: 30px;
+  background: #e2e8f0;
+  margin: 0 4px;
+}
+
+.sim-tooth-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 6px 2px;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  flex: 1;
+}
+
+.sim-tooth-item svg {
+  width: 22px;
+  height: 30px;
+  color: #cbd5e1;
+  transition: all 0.15s ease;
+  transform: rotate(180deg);
+}
+
+.sim-tooth-item span {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.sim-tooth-item:hover {
+  background: #f1f5f9;
+}
+
+.sim-tooth-item:hover svg {
+  color: #94a3b8;
+}
+
+.sim-tooth-item.active {
+  background: #eff6ff;
+}
+
+.sim-tooth-item.active svg {
+  color: #2563eb;
+}
+
+.sim-tooth-item.active span {
+  color: #2563eb;
+}
+
+.sim-popover-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.sim-popover-footer label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.sim-tooth-custom-btn {
+  flex-direction: row !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 10px !important;
+  width: 100%;
+}
+
+.sim-tooth-custom-btn i {
+  transition: color 0.15s ease;
+}
+
+.sim-tooth-custom-btn.active i {
+  color: #2563eb !important;
+}
+
 /* Opacity slider row */
 .sim-opacity-control {
   display: flex;

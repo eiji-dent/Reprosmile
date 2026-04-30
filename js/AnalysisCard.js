@@ -1507,11 +1507,9 @@ class AnalysisCard {
               // Prepare data for Learning AI (Intelligence)
               if (this.phase === 'intraoral' || this.phase === 'golden-prop') {
                   data.features = window.PatternMatcher.extractDentalFeatures(this.lines, this.currentImage);
-                  this.showAiDebugInfoAsync(data.features, "Saving...", null);
               } else if (this.phase === 'lateral') {
                   // Profile-specific features (Silhouette) - Deleting legacy FaceMesh fallback for P2
                   data.features = window.PatternMatcher.extractLateralFeatures(this.lateralLandmarks, this.currentImage);
-                  this.showAiDebugInfoAsync(data.features, "Saving...", null);
               } else {
                   // Facial phase: if we don't have landmarks yet, run a quick background detect
                   let landmarks = this.faceLandmarks;
@@ -1542,6 +1540,11 @@ class AnalysisCard {
                       msg.style.color = "var(--primary)";
                   }
               );
+
+              // Update debug info AFTER successful upload so the new record is reflected
+              if (this.phase === 'intraoral' || this.phase === 'golden-prop' || this.phase === 'lateral') {
+                  this.showAiDebugInfoAsync(data.features, "Saved", null);
+              }
 
               // Step 3: Success feedback
               title.textContent = "クラウド同期完了";

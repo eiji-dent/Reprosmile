@@ -269,7 +269,7 @@
               </label>
             </div>
             <div class="card-actions">
-              <button class="btn btn-ai ai-analyze-btn" title="AI自動解析を実行">
+              <button class="btn btn-secondary ai-analyze-btn" title="AI自動解析を実行">
                 <i data-lucide="sparkles"></i> AI自動解析
               </button>
               <button class="btn btn-secondary send-data-btn" title="解析データを送信">
@@ -361,7 +361,7 @@
               </label>
             </div>
             <div class="card-actions">
-              <button class="btn btn-ai ai-analyze-btn" title="AI自動解析を実行">
+              <button class="btn btn-secondary ai-analyze-btn" title="AI自動解析を実行">
                 <i data-lucide="sparkles"></i> AI自動解析
               </button>
               <button class="btn btn-secondary send-data-btn" title="解析データを送信">
@@ -464,7 +464,7 @@
               </label>
             </div>
             <div class="card-actions">
-              <button class="btn btn-ai ai-analyze-btn" title="AI自動解析を実行">
+              <button class="btn btn-secondary ai-analyze-btn" title="AI自動解析を実行">
                 <i data-lucide="sparkles"></i> AI自動解析
               </button>
               <button class="btn btn-secondary send-data-btn" title="解析データを送信">
@@ -559,7 +559,7 @@
               </label>
             </div>
             <div class="card-actions">
-              <button class="btn btn-ai ai-analyze-btn" title="AI自動解析を実行">
+              <button class="btn btn-secondary ai-analyze-btn" title="AI自動解析を実行">
                 <i data-lucide="sparkles"></i> AI自動解析
               </button>
               <button class="btn btn-secondary send-data-btn" title="解析データを送信">
@@ -686,7 +686,7 @@
               </label>
             </div>
             <div class="card-actions">
-              <button class="btn btn-ai ai-analyze-btn" title="AI自動解析を実行">
+              <button class="btn btn-secondary ai-analyze-btn" title="AI自動解析を実行">
                 <i data-lucide="sparkles"></i> AI自動解析
               </button>
               <button class="btn btn-secondary send-data-btn" title="解析データを送信">
@@ -750,7 +750,7 @@
               </label>
             </div>
             <div class="card-actions">
-              <button class="btn btn-ai ai-analyze-btn" title="AI自動解析を実行">
+              <button class="btn btn-secondary ai-analyze-btn" title="AI自動解析を実行">
                 <i data-lucide="sparkles"></i> AI自動解析
               </button>
               <button class="btn btn-secondary send-data-btn" title="解析データを送信">
@@ -814,7 +814,7 @@
               </label>
             </div>
             <div class="card-actions">
-              <button class="btn btn-ai ai-analyze-btn" title="AI自動解析を実行">
+              <button class="btn btn-secondary ai-analyze-btn" title="AI自動解析を実行">
                 <i data-lucide="sparkles"></i> AI自動解析
               </button>
               <button class="btn btn-secondary send-data-btn" title="解析データを送信">
@@ -878,7 +878,7 @@
               </label>
             </div>
             <div class="card-actions">
-              <button class="btn btn-ai ai-analyze-btn" title="AI自動解析を実行">
+              <button class="btn btn-secondary ai-analyze-btn" title="AI自動解析を実行">
                 <i data-lucide="sparkles"></i> AI自動解析
               </button>
               <button class="btn btn-secondary send-data-btn" title="解析データを送信">
@@ -1606,7 +1606,7 @@
               <h2>臨床シミュレーション (Clinical Simulation / DSD) <span class="lab-badge">シミュレーション</span></h2>
             </div>
             <div class="card-actions">
-              <button id="sim-btn-ai" class="btn btn-ai ai-analyze-btn" title="AI自動解析（クリック抽出）を実行">
+              <button id="sim-btn-ai" class="btn btn-secondary" disabled title="AIによる自動セグメンテーション">
                 <i data-lucide="sparkles"></i> AI自動解析
               </button>
               <label class="btn btn-secondary" title="口腔内写真を読み込む">
@@ -1631,18 +1631,91 @@
               <div class="sim-toolbar">
                 <span class="tool-caption">モード：</span>
                 <div class="sim-tool-group">
-                  <button id="sim-btn-extract" class="sim-tool-btn" disabled title="抽出（ポリゴン）">
-                    <i data-lucide="pen-tool"></i> 抽出
+                  <div class="sim-tooth-selector-wrapper">
+                    <button id="sim-tooth-btn" class="sim-tool-btn">
+                      <i data-lucide="layout-grid"></i> <span id="sim-tooth-btn-text">歯番選択</span>
+                    </button>
+                    <input type="hidden" id="sim-tooth-value" value="">
+                    <div id="sim-tooth-popover" class="sim-popover" style="display:none;">
+                      <div class="sim-popover-header">歯番を選択してください</div>
+                      <div class="sim-arch-container">
+                        <!-- Upper Right 5 to 1 -->
+                        <div class="sim-tooth-item" data-value="15">
+                          <svg viewBox="0 0 24 32"><path d="M4,2 C4,2 6,0 12,0 C18,0 20,2 20,2 C21,8 21,15 18,22 C15,29 12,32 12,32 C12,32 9,29 6,22 C3,15 3,8 4,2 Z" fill="currentColor"/></svg>
+                          <span>15</span>
+                        </div>
+                        <div class="sim-tooth-item" data-value="14">
+                          <svg viewBox="0 0 24 32"><path d="M4,2 C4,2 6,0 12,0 C18,0 20,2 20,2 C21,8 21,15 18,22 C15,29 12,32 12,32 C12,32 9,29 6,22 C3,15 3,8 4,2 Z" fill="currentColor"/></svg>
+                          <span>14</span>
+                        </div>
+                        <div class="sim-tooth-item" data-value="13">
+                          <svg viewBox="0 0 24 32"><path d="M4,2 C4,2 6,0 12,0 C18,0 20,2 20,2 C21,8 21,15 18,22 C15,29 12,32 12,32 C12,32 9,29 6,22 C3,15 3,8 4,2 Z" fill="currentColor"/></svg>
+                          <span>13</span>
+                        </div>
+                        <div class="sim-tooth-item" data-value="12">
+                          <svg viewBox="0 0 24 32"><path d="M4,2 C4,2 6,0 12,0 C18,0 20,2 20,2 C21,8 21,15 18,22 C15,29 12,32 12,32 C12,32 9,29 6,22 C3,15 3,8 4,2 Z" fill="currentColor"/></svg>
+                          <span>12</span>
+                        </div>
+                        <div class="sim-tooth-item" data-value="11">
+                          <svg viewBox="0 0 24 32"><path d="M4,2 C4,2 6,0 12,0 C18,0 20,2 20,2 C21,8 21,15 18,22 C15,29 12,32 12,32 C12,32 9,29 6,22 C3,15 3,8 4,2 Z" fill="currentColor"/></svg>
+                          <span>11</span>
+                        </div>
+                        <div class="sim-popover-divider"></div>
+                        <!-- Upper Left 1 to 5 -->
+                        <div class="sim-tooth-item" data-value="21">
+                          <svg viewBox="0 0 24 32"><path d="M4,2 C4,2 6,0 12,0 C18,0 20,2 20,2 C21,8 21,15 18,22 C15,29 12,32 12,32 C12,32 9,29 6,22 C3,15 3,8 4,2 Z" fill="currentColor"/></svg>
+                          <span>21</span>
+                        </div>
+                        <div class="sim-tooth-item" data-value="22">
+                          <svg viewBox="0 0 24 32"><path d="M4,2 C4,2 6,0 12,0 C18,0 20,2 20,2 C21,8 21,15 18,22 C15,29 12,32 12,32 C12,32 9,29 6,22 C3,15 3,8 4,2 Z" fill="currentColor"/></svg>
+                          <span>22</span>
+                        </div>
+                        <div class="sim-tooth-item" data-value="23">
+                          <svg viewBox="0 0 24 32"><path d="M4,2 C4,2 6,0 12,0 C18,0 20,2 20,2 C21,8 21,15 18,22 C15,29 12,32 12,32 C12,32 9,29 6,22 C3,15 3,8 4,2 Z" fill="currentColor"/></svg>
+                          <span>23</span>
+                        </div>
+                        <div class="sim-tooth-item" data-value="24">
+                          <svg viewBox="0 0 24 32"><path d="M4,2 C4,2 6,0 12,0 C18,0 20,2 20,2 C21,8 21,15 18,22 C15,29 12,32 12,32 C12,32 9,29 6,22 C3,15 3,8 4,2 Z" fill="currentColor"/></svg>
+                          <span>24</span>
+                        </div>
+                        <div class="sim-tooth-item" data-value="25">
+                          <svg viewBox="0 0 24 32"><path d="M4,2 C4,2 6,0 12,0 C18,0 20,2 20,2 C21,8 21,15 18,22 C15,29 12,32 12,32 C12,32 9,29 6,22 C3,15 3,8 4,2 Z" fill="currentColor"/></svg>
+                          <span>25</span>
+                        </div>
+                      </div>
+                      <div class="sim-popover-footer">
+                        <div class="sim-tooth-item sim-tooth-custom-btn" data-value="自由">
+                          <span style="font-size: 0.75rem;">自由指定（歯肉・過剰歯など）</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="sim-tool-separator"></div>
+                  <button id="sim-btn-extract" class="sim-tool-btn" disabled title="手動抽出（ポリゴン）">
+                    <i data-lucide="pen-tool"></i> 手動抽出
+                  </button>
+                  <button id="sim-btn-ai-assist" class="sim-tool-btn btn-ai-purple" disabled title="AI補助抽出（タップで範囲指定）">
+                    <i data-lucide="wand-2"></i> AI補助抽出
                   </button>
                   <button id="sim-btn-confirm" class="sim-tool-btn btn-confirm" disabled>
-                    <i data-lucide="check-circle"></i> 抽出確定
+                    <i data-lucide="check-circle" id="sim-confirm-icon"></i> <span id="sim-confirm-text">抽出確定</span>
                   </button>
                   <div class="sim-tool-separator"></div>
                   <button id="sim-btn-simulate" class="sim-tool-btn" disabled title="シミュレーション（移動・回転・変形）">
                     <i data-lucide="move"></i> シミュレート
                   </button>
+                  <button id="sim-btn-warp" class="sim-tool-btn" disabled title="形態変形（メッシュ）">
+                    <i data-lucide="grid"></i> 変形
+                  </button>
+                  <button id="sim-btn-flip" class="sim-tool-btn" disabled title="左右反転">
+                    <i data-lucide="flip-horizontal"></i> 反転
+                  </button>
+                  <div class="sim-tool-separator"></div>
+                  <button id="sim-btn-delete" class="sim-tool-btn btn-danger" disabled title="選択中の歯を削除">
+                    <i data-lucide="trash-2"></i> 削除
+                  </button>
                 </div>
-                <div id="sim-opacity-row" class="sim-opacity-control" style="display:none;">
+                <div id="sim-opacity-row" class="sim-opacity-control">
                   <label for="sim-opacity-slider">透過度</label>
                   <input type="range" id="sim-opacity-slider" min="0" max="100" value="100">
                   <span id="sim-opacity-label">100%</span>
@@ -1859,7 +1932,10 @@
   <script src="js/data/DataExporter.js"></script>
   <script src="js/TabManager.js"></script>
   <script src="js/analysis/MaterialChoice.js"></script>
-  <script src="js/analysis/SimulationEngine.js"></script>
+  <script src="js/analysis/simulation/SimulationEngine.js"></script>
+  <script src="js/analysis/simulation/SimulationRenderer.js"></script>
+  <script src="js/analysis/simulation/SimulationInteraction.js"></script>
+  <script src="js/analysis/simulation/SimulationAI.js"></script>
   <script src="app.js"></script>
 
   <!-- SVG Filter for Auto Color Correction (Keynote-style) -->
