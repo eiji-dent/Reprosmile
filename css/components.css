@@ -283,6 +283,33 @@
   cursor: not-allowed;
 }
 
+/* AI Premium Purple Theme */
+.ai-analyze-btn, 
+.btn-ai-purple {
+  background-color: #f5f3ff !important;
+  color: #7c3aed !important;
+  border-color: #ddd6fe !important;
+}
+
+.ai-analyze-btn:hover, 
+.btn-ai-purple:hover {
+  background-color: #ede9fe !important;
+  border-color: #7c3aed !important;
+  color: #6d28d9 !important;
+}
+
+.btn-ai-purple.active {
+  background-color: #ede9fe !important;
+  border-color: #7c3aed !important;
+  color: #6d28d9 !important;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2) !important;
+}
+
+.ai-analyze-btn i, 
+.btn-ai-purple i {
+  color: #8b5cf6 !important;
+}
+
 /* AI Scanning Animation */
 .ai-scanning .canvas-wrapper::after {
   content: "";
