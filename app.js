@@ -32,11 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (phase === 'intraoral') return new IntraoralAnalysisCard(el);
     // Phase 10: Shade take
     if (phase === 'shade-take') return new ShadeAnalysisCard(el);
-    // Phases 1-3: Face & Midline
-    if (['frontal', 'lateral', 'e-midline'].includes(phase)) return new FaceAnalysisCard(el);
-    // Phases 4-7: Phonetics & Dynamics
-    if (['e-sound', 'm-sound', 's-sound', 'fv-sound'].includes(phase)) return new DynamicAnalysisCard(el);
-    // Fallback for any other cards (lab tools, etc.)
+    // All other phases use the generic AnalysisCard
     return new AnalysisCard(el);
   }
 

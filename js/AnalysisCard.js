@@ -675,6 +675,15 @@ class BaseAnalysisCard {
       this.applyLandmarksToPlots(landmarks, this.currentImage.width, this.currentImage.height);
   }
 
+  applyLateralLandmarks(pts) {
+      if (!pts) return;
+      this.lines.eLine = [pts.prn, pts.pg, pts.ls, pts.li];
+      this.lines.nla = [pts.col, pts.sn, pts.ls];
+      this.lines.convexity = [pts.g, pts.sn, pts.pg];
+      this.updateStats();
+      this.drawCanvas();
+  }
+
 
 
   /**
