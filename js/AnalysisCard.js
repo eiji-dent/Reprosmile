@@ -675,17 +675,6 @@ class BaseAnalysisCard {
       this.applyLandmarksToPlots(landmarks, this.currentImage.width, this.currentImage.height);
   }
 
-  applyLateralLandmarks(pts) {
-      if (!pts) return;
-      // LateralAI.js から得られた自動計測点を適用
-      // Proxy経由でセットし、自動的にToolbar更新とStats更新をトリガー
-      this.lines.eLine = [pts.prn, pts.pg, pts.ls, pts.li];
-      this.lines.nla = [pts.col, pts.sn, pts.ls];
-      this.lines.convexity = [pts.g, pts.sn, pts.pg];
-      
-      this.updateStats(); 
-      this.drawCanvas();
-  }
 
 
   /**
