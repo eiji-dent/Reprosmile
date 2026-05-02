@@ -59,13 +59,16 @@ class FirebaseService {
             onProgress("解析データを同期中 (匿名化済)...");
             const analysisRecord = {
                 phase,
-                caseId: anonymousId, // Non-identifying unique ID
+                caseId: anonymousId,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                results: data,
-                features: data.features || null, // Capture learning features
+                results: {
+                    landmarks: data.landmarks || data,
+                    stats: data.stats || null
+                },
+                features: data.features || (data.landmarks ? data.landmarks.features : null) || null,
                 imageUrl: downloadURL,
                 imagePath: fileName,
-                platform: "web-v1-anonymous-intel"
+                platform: "web-v1-training-sync"
             };
             
             const docRef = await db.collection('analyses').add(analysisRecord);

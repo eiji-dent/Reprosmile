@@ -28,7 +28,17 @@ window.ShadeHandlers = {
         }
     },
 
-    // --- Statistics and Update Logic ---
+    _setStat(el, val, color, card, placeholder = '--') {
+        if (!el) return;
+        if (card.isDataSent && val !== null && val !== undefined) {
+            el.textContent = val;
+            el.style.color = color || '';
+        } else {
+            el.textContent = placeholder;
+            el.style.color = '';
+        }
+    },
+
     updateShadeStats(card) {
         if (card.phase === 'shade-take') {
             // --- Calibration Display ---
@@ -41,14 +51,14 @@ window.ShadeHandlers = {
                 if (elOffset) {
                     const off = card.shadeOffset;
                     const format = (v) => (v > 0 ? '+' : '') + v.toFixed(1);
-                    elOffset.textContent = `(L:${format(off.l)}, a:${format(off.a)}, b:${format(off.b)})`;
+                    const val = `(L:${format(off.l)}, a:${format(off.a)}, b:${format(off.b)})`;
+                    this._setStat(elOffset, val, '', card, '(校正済み)');
                 }
             } else {
                 if (elStatus) elStatus.classList.add('hidden');
             }
 
             // --- Sampling/Analysis Display (Closest Shade ID) ---
-            // Use card properties set in initShadeUI (correct element references)
             const elId = card.shadeIdValue || card.card.querySelector('#shade-result-id');
             const elL = card.shadeL || card.card.querySelector('#shade-lab-l');
             const elA = card.shadeA || card.card.querySelector('#shade-lab-a');
@@ -57,49 +67,33 @@ window.ShadeHandlers = {
             const shadeSwatch = card.shadeSwatch || card.card.querySelector('#shade-color-swatch');
 
             const currentGuide = window.SHADE_GUIDES[card.currentShadeGuideId];
-            
-            // Show results from shade-picker sample, or lastSampledColor (calibration click)
             const sample = (card.lines && card.lines.shadeSample) ||
                            (card.lastSampledColor ? { ...card.lastSampledColor } : null);
+            
             if (sample) {
                 const lab = window.ColorSpace.rgbToLab(sample.r, sample.g, sample.b);
-                
-                // Update color swatch
                 if (shadeSwatch) shadeSwatch.style.backgroundColor = `rgb(${sample.r}, ${sample.g}, ${sample.b})`;
 
-                let minDE = Infinity;
-                let bestMatch = null;
+                let minDE = Infinity, bestMatch = null;
                 if (currentGuide) {
                     currentGuide.shades.forEach(ref => {
                         const de = window.ColorSpace.deltaE(lab, ref);
                         if (de < minDE) { minDE = de; bestMatch = ref; }
                     });
                 }
-                // Apply calibration offset to displayed values
                 const off = card.shadeOffset || { l: 0, a: 0, b: 0 };
-                const calL = lab.l + off.l;
-                const calA = lab.a + off.a;
-                const calB = lab.b + off.b;
+                this._setStat(elId, bestMatch ? bestMatch.id : '--', '', card, '--');
+                this._setStat(elL, (lab.l + off.l).toFixed(1), '', card, '--');
+                this._setStat(elA, (lab.a + off.a).toFixed(1), '', card, '--');
+                this._setStat(elB, (lab.b + off.b).toFixed(1), '', card, '--');
+                this._setStat(elDelta, minDE.toFixed(2), '', card, '--');
 
-                if (elId) elId.textContent = bestMatch ? bestMatch.id : '--';
-                if (elL) elL.textContent = calL.toFixed(1);
-                if (elA) elA.textContent = calA.toFixed(1);
-                if (elB) elB.textContent = calB.toFixed(1);
-                if (elDelta) elDelta.textContent = minDE.toFixed(2);
-
-                // --- Reference values for the matched shade ---
                 const elRefL = card.card.querySelector('#shade-ref-l');
                 const elRefA = card.card.querySelector('#shade-ref-a');
                 const elRefB = card.card.querySelector('#shade-ref-b');
-                if (bestMatch) {
-                    if (elRefL) elRefL.textContent = bestMatch.l.toFixed(1);
-                    if (elRefA) elRefA.textContent = bestMatch.a.toFixed(1);
-                    if (elRefB) elRefB.textContent = bestMatch.b.toFixed(1);
-                } else {
-                    if (elRefL) elRefL.textContent = '--';
-                    if (elRefA) elRefA.textContent = '--';
-                    if (elRefB) elRefB.textContent = '--';
-                }
+                this._setStat(elRefL, bestMatch ? bestMatch.l.toFixed(1) : null, '', card, '--');
+                this._setStat(elRefA, bestMatch ? bestMatch.a.toFixed(1) : null, '', card, '--');
+                this._setStat(elRefB, bestMatch ? bestMatch.b.toFixed(1) : null, '', card, '--');
             }
 
             // --- Diff Panel Update ---

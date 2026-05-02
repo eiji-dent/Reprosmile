@@ -24,6 +24,7 @@ class BaseAnalysisCard {
     this.activeTool = null;
     this.drawState = 'idle'; 
     this.isWaitingForAIClick = false; // 1クリック誘導AI待ち状態
+    this.isDataSent = false; // 送信済みフラグ（初期値：非表示）
     this.tempStart = null;
     this.tempEnd = null;
     this.tempPoints = []; 
@@ -72,6 +73,7 @@ class BaseAnalysisCard {
     this.loupeContainer = document.getElementById('loupe-container');
     this.loupeCanvas = document.getElementById('loupe-canvas');
     if (this.loupeCanvas) this.loupeCtx = this.loupeCanvas.getContext('2d', { alpha: false });
+    if (this.fileInput) this.fileInput.value = ''; // Ensure clean state
   }
 
 
@@ -207,7 +209,9 @@ class BaseAnalysisCard {
           });
       }
       if (this.fileInput) {
+          console.log(`[AnalysisCard] Registered change listener for ${this.phase} fileInput`, this.fileInput);
           this.fileInput.addEventListener('change', (e) => {
+            console.log(`[AnalysisCard] fileInput change detected for ${this.phase}`, e.target.files);
             if (e.target.files && e.target.files.length > 0) this.handleImage(e.target.files[0]);
           });
       }
@@ -1191,129 +1195,91 @@ class BaseAnalysisCard {
   /**
    * Sends analysis data with a 2-step confirmation modal
    */
+  /**
+   * 解析データをサーバーへ送信（学習データ自動収集）
+   */
   async sendAnalysisData() {
       if (!this.currentImage) return alert("解析する画像がありません。");
       
-      const modal = document.getElementById('data-send-modal');
-      const msg = document.getElementById('data-send-msg');
-      const title = document.getElementById('data-send-title');
-      const footer = document.getElementById('data-send-footer');
-      const btnYes = document.getElementById('btn-send-yes');
-      const btnNo = document.getElementById('btn-send-no');
       const sendBtn = this.card.querySelector('.send-data-btn');
+      if (sendBtn) sendBtn.disabled = true;
 
-      if (!modal || !btnYes || !btnNo) return;
+      // 1. 即座に最新の計算結果を画面（DOM）に表示
+      this.isDataSent = true;
+      this.updateStats();
 
-      // Reset Modal State
-      title.textContent = "解析データの送信";
-      msg.textContent = "プロットは正確ですか？";
-      msg.style.color = "var(--text-main)";
-      footer.style.display = "flex";
-      btnYes.disabled = false; // Add this line to fix the bug
-      btnYes.innerHTML = "はい";
-      btnNo.innerHTML = "いいえ";
-      modal.classList.add('active');
+      // 2. トースト通知を表示
+      this.showToast("解析データを送信しました");
 
-      // Cleanup previous listeners
-      const newBtnYes = btnYes.cloneNode(true);
-      const newBtnNo = btnNo.cloneNode(true);
-      btnYes.parentNode.replaceChild(newBtnYes, btnYes);
-      btnNo.parentNode.replaceChild(newBtnNo, btnNo);
+      try {
+          // 3. 元画像（無加工）のBase64取得
+          const tmpCanvas = document.createElement('canvas');
+          tmpCanvas.width = this.currentImage.width;
+          tmpCanvas.height = this.currentImage.height;
+          const tmpCtx = tmpCanvas.getContext('2d');
+          tmpCtx.drawImage(this.currentImage, 0, 0);
+          const base64Image = tmpCanvas.toDataURL('image/jpeg', 0.9); // サイズ抑制のためJPEG
 
-      newBtnNo.addEventListener('click', () => {
-          msg.textContent = "正しいプロットに修正お願いします";
-          msg.style.color = "#ef4444";
-          footer.style.display = "none";
-          setTimeout(() => modal.classList.remove('active'), 2000);
-      });
+          // 4. 解析計算値の抽出（DOMからテキストとして取得）
+          const statsObj = {};
+          const statItems = this.card.querySelectorAll('.stat-value, .cant-value, .dev-value, .prop-thirds-value, .prop-willis-value, .prop-lower-value, [class$="-val"]');
+          statItems.forEach(el => {
+              // クラス名から主ラベルを推測
+              const label = el.className.split(' ').find(c => c.includes('-value') || c.includes('-val')) || 'stat';
+              statsObj[label] = el.textContent.trim();
+          });
 
-      newBtnYes.addEventListener('click', async () => {
-          // Patient identifier is handled locally/anonymously in FirebaseService now
-          
-          // Step 2: Sending state (Multi-stage Firebase Sync)
-          newBtnYes.disabled = true;
-          newBtnYes.innerHTML = '<span class="loading-spinner"></span> 同期中(匿名)...';
-          
-          try {
-              const data = this.getPlotData();
-              const imageData = await this.getImageDataURL(1024); // Resize for cloud storage efficiency
-              
-              // Prepare data for Learning AI (Intelligence)
-              if (this.phase === 'intraoral' || this.phase === 'golden-prop') {
-                  data.features = window.PatternMatcher.extractDentalFeatures(this.lines, this.currentImage);
-              } else if (this.phase === 'lateral') {
-                  // Profile-specific features (Silhouette) - Deleting legacy FaceMesh fallback for P2
-                  data.features = window.PatternMatcher.extractLateralFeatures(this.lateralLandmarks, this.currentImage);
+          const payload = {
+              phase: this.phase,
+              image: base64Image,
+              lines: this.lines,
+              stats: statsObj,
+              timestamp: new Date().toISOString()
+          };
+
+          // 5. バックグラウンドで送信（Vercel Serverless Function 経由）
+          fetch('/api/save-training-data', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+          }).then(res => {
+              if (res.ok) {
+                  console.log("Data successfully sent to API");
+                  // 送信成功後、デバッグパネルが表示されていれば最新の統計に更新
+                  if (this.card.querySelector('.ai-debug-panel')) {
+                      this.showAiDebugInfoAsync(this.lastFeatures || {}, "Data Sent", "Recent");
+                  }
               } else {
-                  // Facial phase: if we don't have landmarks yet, run a quick background detect
-                  let landmarks = this.faceLandmarks;
-                  if (!landmarks) {
-                      try {
-                          this.prepareOffScreenCanvas();
-                          const landmarker = await window.initFaceLandmarker();
-                          const res = landmarker.detect(BaseAnalysisCard.offScreenCanvas);
-                          if (res.faceLandmarks && res.faceLandmarks.length > 0) {
-                              landmarks = res.faceLandmarks[0];
-                          }
-                      } catch (e) {
-                          console.warn("Background feature extraction failed:", e);
-                      }
-                  }
-                  if (landmarks) {
-                      data.features = window.PatternMatcher.extractFacialFeatures(landmarks);
-                  }
+                  console.error("Server save failed", res.status);
+                  alert("サーバーへの保存に失敗しました。環境変数や接続を確認してください。");
               }
+          }).catch(e => {
+              console.error("Data send failed", e);
+              alert("送信エラーが発生しました。ローカルサーバーが起動しているか確認してください。");
+          });
 
-              // Execute Cloud Sync via FirebaseService
-              await window.FirebaseService.uploadAnalysis(
-                  this.phase, 
-                  data, 
-                  imageData,
-                  (progressMsg) => {
-                      msg.textContent = progressMsg;
-                      msg.style.color = "var(--primary)";
-                  }
-              );
+      } catch (err) {
+          console.error("Preparation for send failed", err);
+      }
+  }
 
-              // Update debug info AFTER successful upload so the new record is reflected
-              if (this.phase === 'intraoral' || this.phase === 'golden-prop' || this.phase === 'lateral') {
-                  this.showAiDebugInfoAsync(data.features, "Saved", null);
-              }
+  showToast(message) {
+      let container = document.getElementById('toast-container');
+      if (!container) {
+          container = document.createElement('div');
+          container.id = 'toast-container';
+          document.body.appendChild(container);
+      }
+      const toast = document.createElement('div');
+      toast.className = 'toast-item';
+      toast.innerHTML = `<i data-lucide="check-circle"></i> <span>${message}</span>`;
+      container.appendChild(toast);
+      if (window.lucide) lucide.createIcons({ root: toast });
 
-              // Step 3: Success feedback
-              title.textContent = "クラウド同期完了";
-              msg.textContent = "正常に保存されました。";
-              msg.style.color = "#10b981";
-              footer.style.display = "none";
-              
-               // Update the button on the card to indicate persistent cloud status
-              const originalHTML = sendBtn.innerHTML;
-              sendBtn.innerHTML = '<i data-lucide="cloud-check"></i> 同期済み';
-              sendBtn.classList.add('btn-success');
-              if (window.lucide) window.lucide.createIcons({ root: sendBtn });
-
-              // Global status update
-              if (window.refreshAiStats) window.refreshAiStats();
-
-              setTimeout(() => {
-                  modal.classList.remove('active');
-                  // Revert button after some time or keep it green? I'll revert for reuse.
-                  setTimeout(() => {
-                      sendBtn.innerHTML = originalHTML;
-                      sendBtn.classList.remove('btn-success');
-                      if (window.lucide) window.lucide.createIcons({ root: sendBtn });
-                  }, 5000);
-              }, 2000);
-
-          } catch (error) {
-              console.error("Cloud Sync Failed:", error);
-              title.textContent = "同期エラー";
-              msg.textContent = "通信環境を確認してください。";
-              msg.style.color = "#ef4444";
-              newBtnYes.disabled = false;
-              newBtnYes.innerHTML = "再試行";
-          }
-      });
+      setTimeout(() => {
+          toast.classList.add('fade-out');
+          setTimeout(() => toast.remove(), 500);
+      }, 3000);
   }
 
   /**

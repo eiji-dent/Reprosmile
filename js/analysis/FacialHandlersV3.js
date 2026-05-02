@@ -141,9 +141,23 @@ window.FacialHandlers = {
     },
 
     // --- Statistics and Update Logic ---
+    _setStat(el, val, color, card, placeholder = '--') {
+        if (!el) return;
+        if (card.isDataSent && val !== null && val !== undefined) {
+            el.textContent = val;
+            el.style.color = color || '';
+        } else {
+            el.textContent = placeholder;
+            el.style.color = '';
+        }
+    },
+
     updateFrontalStats(card) {
         const elCant = card.card.querySelector('.cant-value');
         const elDev = card.card.querySelector('.dev-value');
+        const elThirds = card.card.querySelector('.prop-thirds-value');
+        const elWillis = card.card.querySelector('.prop-willis-value');
+        const elLower = card.card.querySelector('.prop-lower-value');
         let angInt = null;
         if (card.lines.interpupillary) {
             const dx = card.lines.interpupillary.endX - card.lines.interpupillary.startX;
@@ -152,78 +166,88 @@ window.FacialHandlers = {
             if(angInt > 90) angInt -= 180; if(angInt < -90) angInt += 180;
         }
 
-        if (card.lines.midline && angInt !== null && elCant) {
+        let cantVal = null, cantCol = '';
+        let devVal = null, devCol = '';
+        let thirdsVal = null;
+        let willisVal = null, willisCol = '';
+        let lowerValStr = null;
+
+        if (card.lines.midline && angInt !== null) {
             const dxM = card.lines.midline.endX - card.lines.midline.startX;
             const dyM = card.lines.midline.endY - card.lines.midline.startY;
             let angMid = Math.atan2(dyM, dxM) * (180 / Math.PI);
             let diff = Math.abs(angMid - angInt);
             if (diff > 90) diff = 180 - diff;
-            let dev = Math.abs(90 - diff);
-            elCant.textContent = dev.toFixed(1) + '° ズレ';
-            elCant.style.color = dev <= 2.0 ? 'var(--success)' : 'var(--danger)'; 
-        } else if (elCant) elCant.textContent = '--°';
+            let d = Math.abs(90 - diff);
+            cantVal = d.toFixed(1) + '° ズレ';
+            cantCol = d <= 2.0 ? 'var(--success)' : 'var(--danger)'; 
+        }
 
-        if (card.lines.commissural && angInt !== null && elDev) {
+        if (card.lines.commissural && angInt !== null) {
             const dxC = card.lines.commissural.endX - card.lines.commissural.startX;
             const dyC = card.lines.commissural.endY - card.lines.commissural.startY;
             let angCom = Math.atan2(dyC, dxC) * (180 / Math.PI);
             if(angCom > 90) angCom -= 180; if(angCom < -90) angCom += 180;
             let diff = Math.abs(angCom - angInt);
             if (diff > 90) diff = 180 - diff;
-            elDev.textContent = diff.toFixed(1) + '° ズレ';
-            elDev.style.color = diff <= 2.0 ? 'var(--success)' : 'var(--danger)';
-        } else if (elDev) elDev.textContent = '--°';
+            devVal = diff.toFixed(1) + '° ズレ';
+            devCol = diff <= 2.0 ? 'var(--success)' : 'var(--danger)';
+        }
 
-        const elThirds = card.card.querySelector('.prop-thirds-value');
-        const elWillis = card.card.querySelector('.prop-willis-value');
-        const elLower = card.card.querySelector('.prop-lower-value');
         if (card.lines.verticalProportions && card.lines.verticalProportions.length === 6) {
            const pts = card.lines.verticalProportions;
            const upper = Math.abs(pts[1].y - pts[0].y);
            const middle = Math.abs(pts[3].y - pts[1].y);
-           const lower = Math.abs(pts[5].y - pts[3].y);
-           if (middle > 0) elThirds.textContent = `${(upper / middle).toFixed(1)} : 1.0 : ${(lower / middle).toFixed(1)}`;
+           const lowerVal = Math.abs(pts[5].y - pts[3].y);
+           if (middle > 0) thirdsVal = `${(upper / middle).toFixed(1)} : 1.0 : ${(lowerVal / middle).toFixed(1)}`;
+           
            const distLowerFace = Math.abs(pts[5].y - pts[3].y);
            const distEyeToLip = Math.abs(pts[4].y - pts[2].y);
            if (distEyeToLip > 0) {
                const r = distLowerFace / distEyeToLip;
                const diff = Math.abs(r - 1.0);
-               elWillis.textContent = `1 : ${r.toFixed(1)}`;
-               if (diff < 0.101) elWillis.style.color = 'var(--success)'; // 0.1以内は緑
-               else if (diff < 0.201) elWillis.style.color = 'var(--warning)'; // 0.2以内はオレンジ
-               else elWillis.style.color = 'var(--danger)'; // それ以上は赤
+               willisVal = `1 : ${r.toFixed(1)}`;
+               if (diff < 0.101) willisCol = 'var(--success)';
+               else if (diff < 0.201) willisCol = 'var(--warning)';
+               else willisCol = 'var(--danger)';
            }
            const lU = Math.abs(pts[4].y - pts[3].y);
            const lL = Math.abs(pts[5].y - pts[4].y);
-           if (lU > 0) elLower.textContent = `1 : ${(lL / lU).toFixed(1)}`;
-        } else {
-           if(elThirds) elThirds.textContent = '-- : -- : --';
-           if(elWillis) elWillis.textContent = '--';
-           if(elLower) elLower.textContent = '1 : --';
+           if (lU > 0) lowerValStr = `1 : ${(lL / lU).toFixed(1)}`;
         }
+
+        this._setStat(elCant, cantVal, cantCol, card, '--°');
+        this._setStat(elDev, devVal, devCol, card, '--°');
+        this._setStat(elThirds, thirdsVal, '', card, '-- : -- : --');
+        this._setStat(elWillis, willisVal, willisCol, card, '--');
+        this._setStat(elLower, lowerValStr, '', card, '1 : --');
     },
 
     updateLateralStats(card) {
         const elUlip = card.card.querySelector('.ulip-val');
         const elLlip = card.card.querySelector('.llip-val');
         const elNla = card.card.querySelector('.nla-val');
+        let uMmVal = null, uCol = '';
+        let lMmVal = null, lCol = '';
+        let nlaVal = null, nlaCol = '';
+
         if (card.lines.eLine && card.lines.eLine.length === 4) {
           const [nose, pog, ulip, llip] = card.lines.eLine;
-          if (!nose || !pog || !ulip || !llip) return; // Safety check
-          const isLF = nose.x < (card.currentImage.width/2);
-          const cDist = (pt) => {
-             const A = nose.y - pog.y; const B = pog.x - nose.x; const C = (nose.x * pog.y) - (pog.x * nose.y);
-             const distAbs = Math.abs(A * pt.x + B * pt.y + C) / Math.sqrt(A*A + B*B);
-             const crs = (pog.x - nose.x) * (pt.y - nose.y) - (pog.y - nose.y) * (pt.x - nose.x);
-             return (isLF ? crs > 0 : crs < 0) ? distAbs : -distAbs;
-          };
-          const uMm = (cDist(ulip)*card.pxToMm);
-          const lMm = (cDist(llip)*card.pxToMm);
-          if(elUlip) { elUlip.textContent = (uMm>0?'+':'')+uMm.toFixed(2)+' mm'; elUlip.style.color = (uMm>=-5.5&&uMm<=-3.5)?'var(--success)':'var(--primary)'; }
-          if(elLlip) { elLlip.textContent = (lMm>0?'+':'')+lMm.toFixed(2)+' mm'; elLlip.style.color = (lMm>=-2.0&&lMm<=0)?'var(--success)':'var(--primary)'; }
-        } else {
-          if(elUlip) elUlip.textContent = '-- mm';
-          if(elLlip) elLlip.textContent = '-- mm';
+          if (nose && pog && ulip && llip) {
+            const isLF = nose.x < (card.currentImage.width/2);
+            const cDist = (pt) => {
+               const A = nose.y - pog.y; const B = pog.x - nose.x; const C = (nose.x * pog.y) - (pog.x * nose.y);
+               const distAbs = Math.abs(A * pt.x + B * pt.y + C) / Math.sqrt(A*A + B*B);
+               const crs = (pog.x - nose.x) * (pt.y - nose.y) - (pog.y - nose.y) * (pt.x - nose.x);
+               return (isLF ? crs > 0 : crs < 0) ? distAbs : -distAbs;
+            };
+            const uMm = (cDist(ulip)*card.pxToMm);
+            const lMm = (cDist(llip)*card.pxToMm);
+            uMmVal = (uMm>0?'+':'')+uMm.toFixed(2)+' mm';
+            uCol = (uMm>=-5.5&&uMm<=-3.5)?'var(--success)':'var(--primary)';
+            lMmVal = (lMm>0?'+':'')+lMm.toFixed(2)+' mm';
+            lCol = (lMm>=-2.0&&lMm<=0)?'var(--success)':'var(--primary)';
+          }
         }
         
         if (card.lines.nla && card.lines.nla.length === 3) {
@@ -234,19 +258,14 @@ window.FacialHandlers = {
           const mA = Math.sqrt(vA.x*vA.x+vA.y*vA.y);
           const mB = Math.sqrt(vB.x*vB.x+vB.y*vB.y);
           const aDeg = Math.acos(d / (mA * mB)) * (180/Math.PI);
-          if(elNla) {
-            elNla.textContent = aDeg.toFixed(1) + ' °';
-            let nlaColor = 'var(--danger)'; // その他は赤
-            if (aDeg >= 90 && aDeg <= 110) {
-              nlaColor = 'var(--success)'; // 理想値内は緑
-            } else if (aDeg >= 80 && aDeg <= 100) {
-              nlaColor = 'var(--warning)'; // 日本人平均内はオレンジ
-            }
-            elNla.style.color = nlaColor;
-          }
-        } else if(elNla) elNla.textContent = '-- °';
+          nlaVal = aDeg.toFixed(1) + ' °';
+          nlaCol = 'var(--danger)';
+          if (aDeg >= 90 && aDeg <= 110) nlaCol = 'var(--success)';
+          else if (aDeg >= 80 && aDeg <= 100) nlaCol = 'var(--warning)';
+        }
 
         const elConvexity = card.card.querySelector('.convexity-val');
+        let convVal = null, convCol = 'var(--primary)';
         if (card.lines.convexity && card.lines.convexity.length === 3) {
           const [g, sn, pg] = card.lines.convexity;
           const vA = { x: g.x - sn.x, y: g.y - sn.y };
@@ -262,43 +281,26 @@ window.FacialHandlers = {
           const isFacLeft = g.x < (card.currentImage.width/2);
           
           let isConcave = false;
-          if (isFacLeft) {
-             if (crossG < 0) isConcave = true; 
-          } else {
-             if (crossG > 0) isConcave = true;
-          }
+          if (isFacLeft) { if (crossG < 0) isConcave = true; } 
+          else { if (crossG > 0) isConcave = true; }
           let displayAngle = isConcave ? (360 - aDeg) : aDeg;
 
-          let cat = ''; let col = 'var(--primary)';
-          if (displayAngle < 165) { cat = 'Convex (凸)'; col = 'var(--warning)'; }
-          else if (displayAngle >= 165 && displayAngle <= 175) { cat = 'Straight (直)'; col = 'var(--success)'; }
-          else { cat = 'Concave (凹)'; col = 'var(--danger)'; }
+          let cat = ''; 
+          if (displayAngle < 165) { cat = 'Convex (凸)'; convCol = 'var(--warning)'; }
+          else if (displayAngle >= 165 && displayAngle <= 175) { cat = 'Straight (直)'; convCol = 'var(--success)'; }
+          else { cat = 'Concave (凹)'; convCol = 'var(--danger)'; }
+          convVal = `${displayAngle.toFixed(1)}° <br><span style="font-size:0.85em">${cat}</span>`;
+        }
 
-          if(elConvexity) { elConvexity.innerHTML = `${displayAngle.toFixed(1)}° <br><span style="font-size:0.85em">${cat}</span>`; elConvexity.style.color = col; }
-        } else if (elConvexity) elConvexity.textContent = '--';
-    },
-
-    updateEMidlineStats(card) {
-        const elDev = card.card.querySelector('.emid-dev-value');
-        const elCant = card.card.querySelector('.emid-cant-value');
-        const fLine = card.lines['f-midline'];
-        const dLine = card.lines['d-midline'];
-        
-        if (fLine && dLine && elDev && elCant) {
-            let degF = Math.atan2(fLine.endY - fLine.startY, fLine.endX - fLine.startX) * (180/Math.PI);
-            let degD = Math.atan2(dLine.endY - dLine.startY, dLine.endX - dLine.startX) * (180/Math.PI);
-            let cantF = degF - 90; if (cantF < -180) cantF += 360;
-            let cantD = degD - 90; if (cantD < -180) cantD += 360;
-            const cantDiff = Math.abs(cantD - cantF);
-            elCant.textContent = cantDiff.toFixed(1) + ' °';
-            elCant.style.color = (cantDiff >= 4.0) ? 'var(--danger)' : 'var(--success)';
-            
-            const mdX = (dLine.startX + dLine.endX) / 2; const mdY = (dLine.startY + dLine.endY) / 2;
-            const A = fLine.endY - fLine.startY; const B = fLine.startX - fLine.endX; const C = (fLine.endX * fLine.startY) - (fLine.startX * fLine.endY);
-            const distPx = Math.abs(A * mdX + B * mdY + C) / Math.sqrt(A*A + B*B);
-            const distMm = distPx * card.pxToMm;
-            elDev.textContent = distMm.toFixed(1) + ' mm';
-            elDev.style.color = (distMm >= 2.0) ? 'var(--danger)' : 'var(--success)';
+        this._setStat(elUlip, uMmVal, uCol, card, '-- mm');
+        this._setStat(elLlip, lMmVal, lCol, card, '-- mm');
+        this._setStat(elNla, nlaVal, nlaCol, card, '-- °');
+        if (elConvexity) {
+            if (card.isDataSent && convVal) {
+                elConvexity.innerHTML = convVal; elConvexity.style.color = convCol;
+            } else {
+                elConvexity.textContent = '--'; elConvexity.style.color = '';
+            }
         }
     },
 
@@ -308,54 +310,42 @@ window.FacialHandlers = {
         const elGingival = card.card.querySelector('.gingival-val');
         const elIncisalEb = card.card.querySelector('.incisal-eb-val');
 
-        if (card.lines.smileArc && card.lines.smileArc.length === 6 && elArc) {
+        let arc = null, arcCol = '';
+        let corridor = null, corrCol = '';
+        let gingival = null, gingCol = '';
+        let incisal = null;
+
+        if (card.lines.smileArc && card.lines.smileArc.length === 6) {
             const p = card.lines.smileArc;
-            // 歯のカーブの深さ (中心点と端点の中点の差)
-            // Y軸は下方向がプラスなので、(中心Y - 端点平均Y) がプラスなら「笑顔のカーブ」
             const teethSag = p[1].y - (p[0].y + p[2].y) / 2;
             const lipSag = p[4].y - (p[3].y + p[5].y) / 2;
-            
-            let result = 'Consonant (調和)';
-            let color = 'var(--success)';
-            
-            if (teethSag < -2) {
-                result = 'Reverse (逆カーブ)'; 
-                color = 'var(--danger)';
-            } else if (teethSag < 12 || (lipSag > 10 && teethSag < lipSag * 0.7)) {
-                result = 'Flat (平坦)'; 
-                color = 'var(--warning)';
-            }
-
-            elArc.textContent = result;
-            elArc.style.color = color;
+            arc = 'Consonant (調和)'; arcCol = 'var(--success)';
+            if (teethSag < -2) { arc = 'Reverse (逆カーブ)'; arcCol = 'var(--danger)'; } 
+            else if (teethSag < 12 || (lipSag > 10 && teethSag < lipSag * 0.7)) { arc = 'Flat (平坦)'; arcCol = 'var(--warning)'; }
         }
-        if (card.lines.corridor && card.lines.corridor.length === 4 && elCorridor) {
+        if (card.lines.corridor && card.lines.corridor.length === 4) {
             const pts = card.lines.corridor;
             const totalW = Math.abs(pts[3].x - pts[0].x);
             const dentW = Math.abs(pts[2].x - pts[1].x);
             if (totalW > 0) {
                 const ratio = ((totalW - dentW) / totalW) * 100;
-                elCorridor.textContent = ratio.toFixed(1) + ' %';
-                elCorridor.style.color = (ratio >= 2 && ratio <= 15) ? 'var(--success)' : 'var(--danger)';
+                corridor = ratio.toFixed(1) + ' %';
+                corrCol = (ratio >= 2 && ratio <= 15) ? 'var(--success)' : 'var(--danger)';
             }
         }
         if (card.lines.gingival && card.lines.gingival.length === 4) {
             const pts = card.lines.gingival;
-            // ユーザー要望: 1つ目(歯肉縁)が2つ目(唇縁)より下ならプラス、上ならマイナス
-            // Canvas座標系(下がプラス)では y0 > y1 の時にプラスにしたいので (y0 - y1)
-            const gPx = pts[0].y - pts[1].y;
-            const gMm = gPx * card.pxToMm;
-            if (elGingival) {
-                elGingival.textContent = (gMm > 0 ? '+' : '') + gMm.toFixed(1) + ' mm';
-                elGingival.style.color = (gMm >= -2.0 && gMm <= 0.5) ? 'var(--success)' : 'var(--danger)';
-            }
-            const iPx = pts[2].y - pts[1].y;
-            const bPx = pts[3].y - pts[2].y;
-            if (iPx + bPx !== 0) {
-                const ratio = (iPx / (iPx + bPx)) * 100;
-                if (elIncisalEb) elIncisalEb.textContent = ratio.toFixed(0) + ' %';
-            }
+            const gMm = (pts[0].y - pts[1].y) * card.pxToMm;
+            gingival = (gMm > 0 ? '+' : '') + gMm.toFixed(1) + ' mm';
+            gingCol = (gMm >= -2.0 && gMm <= 0.5) ? 'var(--success)' : 'var(--danger)';
+            const iPx = pts[2].y - pts[1].y; const bPx = pts[3].y - pts[2].y;
+            if (iPx + bPx !== 0) incisal = ((iPx / (iPx + bPx)) * 100).toFixed(0) + ' %';
         }
+
+        this._setStat(elArc, arc, arcCol, card, '-- (未判定)');
+        this._setStat(elCorridor, corridor, corrCol, card, '-- %');
+        this._setStat(elGingival, gingival, gingCol, card, '-- mm');
+        this._setStat(elIncisalEb, incisal, '', card, '-- %');
     },
 
     drawFrontal(card, mapC) {
@@ -402,7 +392,7 @@ window.FacialHandlers = {
             if (card.lines.corridor) this.drawCorridor(card, card.lines.corridor, mapC, false);
             if (card.activeTool === 'corridor' && card.tempPoints.length < 4 && card.tempPoints.length > 0) {
                const tmps = [...card.tempPoints]; if(card.tempEnd) tmps.push({x:card.tempEnd.realX, y:card.tempEnd.realY});
-               this.drawCorridor(card, tmps, mapC, true);
+               this.drawSmileArc(card, tmps, mapC, true);
             }
             if (card.lines.gingival) this.drawGingival(card, card.lines.gingival, mapC, false);
             if (card.activeTool === 'gingival' && card.tempPoints.length < 4 && card.tempPoints.length > 0) {
@@ -426,18 +416,16 @@ window.FacialHandlers = {
 
     updateHBarStats(card) {
         const elCant = card.card.querySelector('.hbar-cant-val');
+        let val = null, col = '';
         if (card.lines['hbar-bar'] && card.lines['hbar-ref']) {
-            const b = card.lines['hbar-bar'];
-            const r = card.lines['hbar-ref'];
+            const b = card.lines['hbar-bar']; const r = card.lines['hbar-ref'];
             const bAng = Math.atan2(b.endY - b.startY, b.endX - b.startX) * 180 / Math.PI;
             const rAng = Math.atan2(r.endY - r.startY, r.endX - r.startX) * 180 / Math.PI;
-            let diff = Math.abs(bAng - rAng);
-            if (diff > 90) diff = Math.abs(180 - diff);
-            if (elCant) {
-                elCant.textContent = diff.toFixed(1) + ' °';
-                elCant.style.color = diff <= 1.0 ? 'var(--success)' : 'var(--danger)';
-            }
-        } else if (elCant) elCant.textContent = '-- °';
+            let diff = Math.abs(bAng - rAng); if (diff > 90) diff = Math.abs(180 - diff);
+            val = diff.toFixed(1) + ' °';
+            col = diff <= 1.0 ? 'var(--success)' : 'var(--danger)';
+        }
+        this._setStat(elCant, val, col, card, '-- °');
     },
 
     updateEMidlineStats(card) {
@@ -445,65 +433,65 @@ window.FacialHandlers = {
         const elDevDeg = card.card.querySelector('#emid-dev-deg');
         const elCantEdge = card.card.querySelector('#emid-cant-edge');
 
-        // 1. Midline Deviation & Cant
+        let devMm = null, devDeg = null, devDegCol = '';
+        let cantEdge = null, cantEdgeCol = '';
+
         if (card.lines['f-midline'] && card.lines['d-midline']) {
             const f = card.lines['f-midline'];
             const d = card.lines['d-midline'];
-            
-            // Deviation in mm (horizontal diff at the top of dental midline)
-            const devPx = Math.abs(d.startX - f.startX);
-            if (elDevMm) elDevMm.textContent = (devPx * card.pxToMm).toFixed(1) + ' mm';
-
-            // Cant in degrees
+            devMm = (Math.abs(d.startX - f.startX) * card.pxToMm).toFixed(1) + ' mm';
             const fAng = Math.atan2(f.endY - f.startY, f.endX - f.startX) * 180 / Math.PI;
             const dAng = Math.atan2(d.endY - d.startY, d.endX - d.startX) * 180 / Math.PI;
-            let diff = Math.abs(fAng - dAng);
-            if (diff > 90) diff = Math.abs(180 - diff);
-            if (elDevDeg) {
-                elDevDeg.textContent = diff.toFixed(1) + '° ズレ';
-                elDevDeg.style.color = diff <= 2.0 ? 'var(--success)' : 'var(--danger)';
-            }
+            let diff = Math.abs(fAng - dAng); if (diff > 90) diff = Math.abs(180 - diff);
+            devDeg = diff.toFixed(1) + '° ズレ';
+            devDegCol = diff <= 2.0 ? 'var(--success)' : 'var(--danger)';
         }
 
-        // 2. Incisal Plane Cant
         if (card.lines['interpupillary-e'] && card.lines['incisal-edge']) {
             const i = card.lines['interpupillary-e'];
             const e = card.lines['incisal-edge'];
             const iAng = Math.atan2(i.endY - i.startY, i.endX - i.startX) * 180 / Math.PI;
             const eAng = Math.atan2(e.endY - e.startY, e.endX - e.startX) * 180 / Math.PI;
-            let diff = Math.abs(iAng - eAng);
-            if (diff > 90) diff = Math.abs(180 - diff);
-            if (elCantEdge) {
-                elCantEdge.textContent = diff.toFixed(1) + '° ズレ';
-                elCantEdge.style.color = diff <= 1.0 ? 'var(--success)' : 'var(--danger)';
-            }
+            let diff = Math.abs(iAng - eAng); if (diff > 90) diff = Math.abs(180 - diff);
+            cantEdge = diff.toFixed(1) + '° ズレ';
+            cantEdgeCol = diff <= 1.0 ? 'var(--success)' : 'var(--danger)';
         }
+
+        this._setStat(elDevMm, devMm, '', card, '-- mm');
+        this._setStat(elDevDeg, devDeg, devDegCol, card, '--° ズレ');
+        this._setStat(elCantEdge, cantEdge, cantEdgeCol, card, '--° ズレ');
     },
 
     updateMSoundStats(card) {
         const el = card.card.querySelector('.mmeasure-val');
-        if (el && card.lines.mmeasure) {
+        let val = null, col = '';
+        if (card.lines.mmeasure) {
             const mm = card.getLineLengthMm('mmeasure');
-            el.textContent = mm + ' mm';
-            el.style.color = (mm >= 1.0 && mm <= 3.0) ? 'var(--success)' : 'var(--danger)';
-        } else if (el) el.textContent = '-- mm';
+            val = mm + ' mm';
+            col = (mm >= 1.0 && mm <= 3.0) ? 'var(--success)' : 'var(--danger)';
+        }
+        this._setStat(el, val, col, card, '-- mm');
     },
 
     updateSSoundStats(card) {
         const el = card.card.querySelector('.smeasure-val');
-        if (el && card.lines.smeasure) {
+        let val = null, col = '';
+        if (card.lines.smeasure) {
             const mm = card.getLineLengthMm('smeasure');
-            el.textContent = mm + ' mm';
-            el.style.color = (mm >= 1.0 && mm <= 1.5) ? 'var(--success)' : 'var(--danger)';
-        } else if (el) el.textContent = '-- mm';
+            val = mm + ' mm';
+            col = (mm >= 1.0 && mm <= 1.5) ? 'var(--success)' : 'var(--danger)';
+        }
+        this._setStat(el, val, col, card, '-- mm');
     },
 
     updateFVSoundStats(card) {
         const el = card.card.querySelector('.fvmeasure-val');
-        if (el && card.lines.fvmeasure) {
+        let val = null, col = '';
+        if (card.lines.fvmeasure) {
             const mm = card.getLineLengthMm('fvmeasure');
-            el.textContent = mm + ' mm';
-            el.style.color = (mm <= 1.5) ? 'var(--success)' : 'var(--danger)';
-        } else if (el) el.textContent = '-- mm';
+            val = mm + ' mm';
+            col = (mm <= 1.5) ? 'var(--success)' : 'var(--danger)';
+        }
+        this._setStat(el, val, col, card, '-- mm');
     }
 };

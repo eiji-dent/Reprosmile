@@ -194,6 +194,17 @@ window.DentalHandlers = {
     },
 
     // --- Statistics and Update Logic ---
+    _setStat(el, val, color, card, placeholder = '--') {
+        if (!el) return;
+        if (card.isDataSent && val !== null && val !== undefined) {
+            el.textContent = val;
+            el.style.color = color || '';
+        } else {
+            el.textContent = placeholder;
+            el.style.color = '';
+        }
+    },
+
     updateIntraoralStats(card) {
         const mm = card.pxToMm || 0.075;
 
@@ -211,112 +222,100 @@ window.DentalHandlers = {
                 return 'Ideal (理想的)';
             };
 
+            let wlR = null, wlRCol = '', wlRProf = null;
+            let wlL = null, wlLCol = '', wlLProf = null;
+
             if (p.length >= 4) {
                 const h = Math.abs(p[1].y - p[0].y); const w = Math.abs(p[3].x - p[2].x);
-                if (h > 0 && elWlR) {
+                if (h > 0) {
                     const ratio = (w / h) * 100;
-                    elWlR.textContent = ratio.toFixed(1) + ' %';
-                    elWlR.style.color = (ratio >= 75 && ratio <= 85) ? 'var(--success)' : 'var(--danger)';
-                    if (elWlRProf) elWlRProf.textContent = getProfile(ratio);
+                    wlR = ratio.toFixed(1) + ' %';
+                    wlRCol = (ratio >= 75 && ratio <= 85) ? 'var(--success)' : 'var(--danger)';
+                    wlRProf = getProfile(ratio);
                 }
             }
             if (p.length === 8) {
                 const h = Math.abs(p[5].y - p[4].y); const w = Math.abs(p[7].x - p[6].x);
-                if (h > 0 && elWlL) {
+                if (h > 0) {
                     const ratio = (w / h) * 100;
-                    elWlL.textContent = ratio.toFixed(1) + ' %';
-                    elWlL.style.color = (ratio >= 75 && ratio <= 85) ? 'var(--success)' : 'var(--danger)';
-                    if (elWlLProf) elWlLProf.textContent = getProfile(ratio);
+                    wlL = ratio.toFixed(1) + ' %';
+                    wlLCol = (ratio >= 75 && ratio <= 85) ? 'var(--success)' : 'var(--danger)';
+                    wlLProf = getProfile(ratio);
                 }
             }
+            this._setStat(elWlR, wlR, wlRCol, card, '-- %');
+            this._setStat(elWlL, wlL, wlLCol, card, '-- %');
+            this._setStat(elWlRProf, wlRProf, '', card, '--');
+            this._setStat(elWlLProf, wlLProf, '', card, '--');
         }
 
-        // RED Proportion
+        let redR = null, redL = null;
+        let gpR = null, gpL = null;
+        let slvR = null, slvL = null;
+        let diff1 = null, d1Col = '';
+        let diff2 = null, d2Col = '';
+
         if (card.lines.redProp && card.lines.redProp.length === 7) {
             const pts = card.lines.redProp;
             const ws = [
                 Math.abs(pts[1].x - pts[0].x), Math.abs(pts[2].x - pts[1].x), Math.abs(pts[3].x - pts[2].x),
                 Math.abs(pts[4].x - pts[3].x), Math.abs(pts[5].x - pts[4].x), Math.abs(pts[6].x - pts[5].x)
             ];
-            
-            // RED % (Next lateral / Prev lateral)
-            const redR = (ws[0] / ws[1] * 100).toFixed(1);
-            const redL = (ws[5] / ws[4] * 100).toFixed(1);
-            const elRedR = card.card.querySelector('.red-r-val');
-            const elRedL = card.card.querySelector('.red-l-val');
-            if (elRedR) elRedR.textContent = redR + ' %';
-            if (elRedL) elRedL.textContent = redL + ' %';
+            redR = (ws[0] / ws[1] * 100).toFixed(1) + ' %';
+            redL = (ws[5] / ws[4] * 100).toFixed(1) + ' %';
 
-            // Golden % (Sum of R-steps = 50%, Sum of L-steps = 50% for standard view)
             const totalR = ws[0] + ws[1] + ws[2];
             const totalL = ws[3] + ws[4] + ws[5];
             if (totalR > 0 && totalL > 0) {
-                const gpR = `${(ws[2]/totalR*50).toFixed(0)}:${(ws[1]/totalR*50).toFixed(0)}:${(ws[0]/totalR*50).toFixed(0)}`;
-                const gpL = `${(ws[3]/totalL*50).toFixed(0)}:${(ws[4]/totalL*50).toFixed(0)}:${(ws[5]/totalL*50).toFixed(0)}`;
-                const elGpR = card.card.querySelector('.gp-r-val');
-                const elGpL = card.card.querySelector('.gp-l-val');
-                if (elGpR) elGpR.textContent = gpR;
-                if (elGpL) elGpL.textContent = gpL;
-
-                // Relative Ratios (Central : Lateral (1.0) : Canine)
-                const slvR = `${(ws[2]/ws[1]).toFixed(2)} : 1.00 : ${(ws[0]/ws[1]).toFixed(2)}`;
-                const slvL = `${(ws[3]/ws[4]).toFixed(2)} : 1.00 : ${(ws[5]/ws[4]).toFixed(2)}`;
-                const elSlvR = card.card.querySelector('.silver-r-val');
-                const elSlvL = card.card.querySelector('.silver-l-val');
-                if (elSlvR) elSlvR.textContent = slvR;
-                if (elSlvL) elSlvL.textContent = slvL;
+                gpR = `${(ws[2]/totalR*50).toFixed(0)}:${(ws[1]/totalR*50).toFixed(0)}:${(ws[0]/totalR*50).toFixed(0)}`;
+                gpL = `${(ws[3]/totalL*50).toFixed(0)}:${(ws[4]/totalL*50).toFixed(0)}:${(ws[5]/totalL*50).toFixed(0)}`;
+                slvR = `${(ws[2]/ws[1]).toFixed(2)} : 1.00 : ${(ws[0]/ws[1]).toFixed(2)}`;
+                slvL = `${(ws[3]/ws[4]).toFixed(2)} : 1.00 : ${(ws[5]/ws[4]).toFixed(2)}`;
             }
-
-            // Symmetry
-            const diff1 = Math.abs(ws[2] - ws[3]) * mm;
-            const diff2 = Math.abs(ws[1] - ws[4]) * mm;
-            const elD1 = card.card.querySelector('.red-diff1-val');
-            const elD2 = card.card.querySelector('.red-diff2-val');
-            if (elD1) {
-                elD1.textContent = diff1.toFixed(1) + ' mm';
-                elD1.style.color = diff1 <= 0.5 ? 'var(--success)' : (diff1 <= 1.0 ? 'var(--warning)' : 'var(--danger)');
-            }
-            if (elD2) {
-                elD2.textContent = diff2.toFixed(1) + ' mm';
-                elD2.style.color = diff2 <= 1.0 ? 'var(--success)' : 'var(--danger)';
-            }
+            const d1Val = Math.abs(ws[2] - ws[3]) * mm;
+            const d2Val = Math.abs(ws[1] - ws[4]) * mm;
+            diff1 = d1Val.toFixed(1) + ' mm';
+            d1Col = d1Val <= 0.5 ? 'var(--success)' : (d1Val <= 1.0 ? 'var(--warning)' : 'var(--danger)');
+            diff2 = d2Val.toFixed(1) + ' mm';
+            d2Col = d2Val <= 1.0 ? 'var(--success)' : 'var(--danger)';
         }
 
-        // Pink Esth
+        this._setStat(card.card.querySelector('.red-r-val'), redR, '', card, '-- %');
+        this._setStat(card.card.querySelector('.red-l-val'), redL, '', card, '-- %');
+        this._setStat(card.card.querySelector('.gp-r-val'), gpR, '', card, '--');
+        this._setStat(card.card.querySelector('.gp-l-val'), gpL, '', card, '--');
+        this._setStat(card.card.querySelector('.silver-r-val'), slvR, '', card, '--');
+        this._setStat(card.card.querySelector('.silver-l-val'), slvL, '', card, '--');
+        this._setStat(card.card.querySelector('.red-diff1-val'), diff1, d1Col, card, '-- mm');
+        this._setStat(card.card.querySelector('.red-diff2-val'), diff2, d2Col, card, '-- mm');
+
+        let asym = null, asymCol = '';
+        let canine = null, canineCol = '';
+        let levelR = null, levelRCol = '';
+        let levelL = null, levelLCol = '';
+
         if (card.lines.pinkEsth && card.lines.pinkEsth.length === 6) {
             const pts = card.lines.pinkEsth;
-            const diffC = Math.abs(pts[2].y - pts[3].y) * mm;
-            const diffK = Math.abs(pts[0].y - pts[5].y) * mm;
-            const elAsym = card.card.querySelector('.pz-asym-val');
-            const elCanine = card.card.querySelector('.pz-canine-val');
-            if (elAsym) {
-                elAsym.textContent = diffC.toFixed(1) + ' mm';
-                elAsym.style.color = diffC <= 1.0 ? 'var(--success)' : 'var(--danger)';
-            }
-            if (elCanine) {
-                elCanine.textContent = diffK.toFixed(1) + ' mm';
-                elCanine.style.color = diffK <= 2.0 ? 'var(--success)' : 'var(--danger)';
-            }
+            const dC = Math.abs(pts[2].y - pts[3].y) * mm;
+            const dK = Math.abs(pts[0].y - pts[5].y) * mm;
+            asym = dC.toFixed(1) + ' mm';
+            asymCol = dC <= 1.0 ? 'var(--success)' : 'var(--danger)';
+            canine = dK.toFixed(1) + ' mm';
+            canineCol = dK <= 2.0 ? 'var(--success)' : 'var(--danger)';
 
-            // GZL Level (Side tooth relative to C-K line)
-            const levelR = (pts[1].y - (pts[0].y + pts[2].y) / 2) * mm;
-            const levelL = (pts[4].y - (pts[3].y + pts[5].y) / 2) * mm;
-
-            const elLevelR = card.card.querySelector('.pz-level-r-val');
-            const elLevelL = card.card.querySelector('.pz-level-l-val');
-
-            const validateLevel = (el, val) => {
-                if (el) {
-                    el.textContent = val.toFixed(1) + ' mm';
-                    // 基準値: 0.5mm 〜 1.5mm 程度歯冠側にあるのが理想的
-                    el.style.color = (val >= 0.5 && val <= 1.5) ? 'var(--success)' : 'var(--warning)';
-                }
-            };
-            validateLevel(elLevelR, levelR);
-            validateLevel(elLevelL, levelL);
+            const lR = (pts[1].y - (pts[0].y + pts[2].y) / 2) * mm;
+            const lL = (pts[4].y - (pts[3].y + pts[5].y) / 2) * mm;
+            levelR = lR.toFixed(1) + ' mm';
+            levelRCol = (lR >= 0.5 && lR <= 1.5) ? 'var(--success)' : 'var(--warning)';
+            levelL = lL.toFixed(1) + ' mm';
+            levelLCol = (lL >= 0.5 && lL <= 1.5) ? 'var(--success)' : 'var(--warning)';
         }
 
-        // Axial
+        this._setStat(card.card.querySelector('.pz-asym-val'), asym, asymCol, card, '-- mm');
+        this._setStat(card.card.querySelector('.pz-canine-val'), canine, canineCol, card, '-- mm');
+        this._setStat(card.card.querySelector('.pz-level-r-val'), levelR, levelRCol, card, '-- mm');
+        this._setStat(card.card.querySelector('.pz-level-l-val'), levelL, levelLCol, card, '-- mm');
+
         if (card.lines.axialIncl && card.lines.axialIncl.length === 14) {
             const p = card.lines.axialIncl;
             const gMid = Math.atan2(p[1].y - p[0].y, p[1].x - p[0].x);
@@ -324,93 +323,65 @@ window.DentalHandlers = {
                 const ang = Math.atan2(b.y - t.y, b.x - t.x);
                 let diff = (ang - gMid) * 180 / Math.PI;
                 if (diff > 90) diff -= 180; if (diff < -90) diff += 180;
-                // 右側なら逆転、左側ならそのまま (近心+, 遠心-)
                 return (isRight ? -diff : diff).toFixed(1);
             };
             const selectors = ['.ax1-r-val','.ax1-l-val','.ax2-r-val','.ax2-l-val','.ax3-r-val','.ax3-l-val'];
             const pairs = [[2,3],[8,9],[4,5],[10,11],[6,7],[12,13]];
             const angles = pairs.map((pair, i) => parseFloat(getAngle(p[pair[0]], p[pair[1]], i % 2 === 0)));
             
-            const validateSide = (idxC, idxL, idxK) => {
-                const angC = angles[idxC];
-                const angL = angles[idxL];
-                const angK = angles[idxK];
+            const results = angles.map((val, i) => {
+                const isR = i % 2 === 0;
+                let ideal = [3.0, 3.0, 5.0, 5.0, 8.0, 8.0][i];
+                let col = 'var(--success)';
+                // Direction checks
+                if (val < 0) col = 'var(--danger)';
+                // Order checks (Central < Lateral < Canine)
+                if (i >= 2 && val <= angles[i-2]) col = 'var(--danger)';
 
-                const results = [
-                    { idx: idxC, val: angC, ideal: 3.0, color: 'var(--success)' },
-                    { idx: idxL, val: angL, ideal: 5.0, color: 'var(--success)' },
-                    { idx: idxK, val: angK, ideal: 8.0, color: 'var(--success)' }
-                ];
+                if (col !== 'var(--danger)') {
+                    if (Math.abs(val - ideal) >= 2.0) col = 'var(--warning)';
+                }
+                return { val: val.toFixed(1) + ' °', col };
+            });
 
-                // --- 1. 最優先: 赤判定 (方向・順序の誤り) ---
-                if (angC < 0) results[0].color = 'var(--danger)'; 
-                if (angL <= angC) results[1].color = 'var(--danger)';
-                if (angK <= angL) results[2].color = 'var(--danger)';
-
-                // --- 2. 次点: 黄色・緑判定 (基準値からのズレ) ---
-                results.forEach(res => {
-                    // 赤判定が確定している場合はスキップ
-                    if (res.color === 'var(--danger)') return;
-                    
-                    const diff = Math.abs(res.val - res.ideal);
-                    if (diff >= 2.0) {
-                        res.color = 'var(--warning)'; // 黄色
-                    } else {
-                        res.color = 'var(--success)'; // 緑
-                    }
-                });
-                
-                results.forEach(res => {
-                    const el = card.card.querySelector(selectors[res.idx]);
-                    if (el) {
-                        el.textContent = res.val.toFixed(1) + ' °';
-                        el.style.color = res.color;
-                    }
-                });
-            };
-
-            validateSide(0, 2, 4); // 右側
-            validateSide(1, 3, 5); // 左側
+            selectors.forEach((sel, i) => {
+                this._setStat(card.card.querySelector(sel), results[i].val, results[i].col, card, '-- °');
+            });
+        } else {
+            ['.ax1-r-val','.ax1-l-val','.ax2-r-val','.ax2-l-val','.ax3-r-val','.ax3-l-val'].forEach(sel => {
+                this._setStat(card.card.querySelector(sel), null, '', card, '-- °');
+            });
         }
 
-        // Black Triangle (Refactored Papilla)
+        const btSelectors = ['.bt-val-1', '.bt-val-2', '.bt-val-3', '.bt-val-4', '.bt-val-5'];
+        const btValues = [];
         if (card.lines.papilla && card.lines.papilla.length >= 2) {
             const pts = card.lines.papilla;
-            const selectors = ['.bt-val-1', '.bt-val-2', '.bt-val-3', '.bt-val-4', '.bt-val-5'];
-            const values = [];
-            
             for(let i=0; i<5; i++) {
-                const el = card.card.querySelector(selectors[i]);
-                if(el && pts[i*2] && pts[i*2+1]) {
+                if(pts[i*2] && pts[i*2+1]) {
                     const dist = Math.abs(pts[i*2+1].y - pts[i*2].y) * mm;
-                    values[i] = dist; // 後の左右差計算用に保存
-                    el.textContent = dist.toFixed(1) + ' mm';
-                    
-                    // 閾値判定: 2mm以上でオレンジ、3mm以上で赤
-                    if (dist >= 3.0) {
-                        el.style.color = 'var(--danger)';
-                    } else if (dist >= 2.0) {
-                        el.style.color = 'var(--warning)';
-                    } else {
-                        el.style.color = 'var(--success)';
-                    }
+                    btValues[i] = { text: dist.toFixed(1) + ' mm', raw: dist };
                 }
             }
-
-            // 左右差 (Asymmetry) の判定
-            const updateDiff = (idx1, idx2, selector) => {
-                const el = card.card.querySelector(selector);
-                if (el && values[idx1] !== undefined && values[idx2] !== undefined) {
-                    const diff = Math.abs(values[idx1] - values[idx2]);
-                    el.textContent = diff.toFixed(1) + ' mm';
-                    // 左右差が2mm以上で警告 (オレンジ)
-                    el.style.color = diff >= 2.0 ? 'var(--warning)' : 'var(--success)';
-                }
-            };
-
-            updateDiff(1, 3, '.bt-diff-cl'); // 中-側 (部2 vs 部4)
-            updateDiff(0, 4, '.bt-diff-lc'); // 側-犬 (部1 vs 部5)
         }
+        btSelectors.forEach((sel, i) => {
+            const res = btValues[i];
+            let col = '';
+            if (res) col = res.raw >= 3.0 ? 'var(--danger)' : (res.raw >= 2.0 ? 'var(--warning)' : 'var(--success)');
+            this._setStat(card.card.querySelector(sel), res ? res.text : null, col, card, '-- mm');
+        });
+
+        const updateDiff = (idx1, idx2, selector) => {
+            let val = null, col = '';
+            if (btValues[idx1] && btValues[idx2]) {
+                const diff = Math.abs(btValues[idx1].raw - btValues[idx2].raw);
+                val = diff.toFixed(1) + ' mm';
+                col = diff >= 2.0 ? 'var(--warning)' : 'var(--success)';
+            }
+            this._setStat(card.card.querySelector(selector), val, col, card, '-- mm');
+        };
+        updateDiff(1, 3, '.bt-diff-cl');
+        updateDiff(0, 4, '.bt-diff-lc');
     },
 
     updateStats(card) {
