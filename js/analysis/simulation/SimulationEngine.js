@@ -1,5 +1,5 @@
 /**
- * SimulationEngine.js - Chapter 14: Clinical Simulation (DSD)
+ * SimulationEngine.js - Chapter 14: Clinical Simulation
  * 
  * Architecture:
  *  - Triple Canvas: bgCanvas (original image) / fgCanvas (extracted tooth) / uiCanvas (interaction handles)
